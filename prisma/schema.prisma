@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// npx prisma migrate dev --name init
+// this can be used to make migrations to the db
+
+model User {
+  id             String          @id @default(uuid())
+  name           String
+  age            Int
+  email          String          @unique
+  writtenPosts   Post[]          @relation("WriitenPosts")
+  favoritedPosts Post[]          @relation("FavoritedPosts")
+  userPreference UserPreference? @relation(fields: [preferenceId], references: [id])
+  preferenceId   String?         @unique
+
+  role Role @default(BASIC)
+
+  //block scope attributes
+  @@unique([name, age]) //this means name and age of every user should be different
+}
+
+model UserPreference {
+  id           String  @id @default(uuid())
+  emailUpdates Boolean
+  user         User?
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  rating    Float
+  createdAt DateTime @default(now()) //the default value will be set to the current timestamp
+  updatedAt DateTime @updatedAt //the value will be update everytime we make an update 
+
+  //one to many (post and user relation)
+  author        User    @relation("WriitenPosts", fields: [authorId], references: [id])
+  authorId      String
+  favoritedBy   User?   @relation("FavoritedPosts", fields: [favoritedById], references: [id])
+  favoritedById String?
+  //one to many ends 
+
+  categories Category[] //many to many (post and category relation)
+
+  //@@id([title, authorId])  this block-scope attribute means that the title and authorId should be used as the id
+}
+
+model Category {
+  id    String @id @default(uuid())
+  posts Post[] //many to many (post and category relation)
+}
+
+enum Role {
+  BASIC
+  ADMIN
+}
